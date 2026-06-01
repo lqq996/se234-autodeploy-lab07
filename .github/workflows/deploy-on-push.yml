@@ -1,19 +1,37 @@
-name: deploy on push
-on: [push]
-jobs:
-  deploy-app:
-    runs-on: ubuntu-latest
-    steps:
-      - name: check out the code to build server
-        uses: actions/checkout@v4
+name: deploy on push 
+on: [push] 
+jobs: 
+  deploy-app: 
+    runs-on: ubuntu-latest 
+    steps: 
+      - name: check out the code to build server 
+        uses: actions/checkout@v4 
 
-      - name: copy file to server
-        uses: appleboy/scp-action@master
+      # Ubuntu 24+ 必加：修改目录权限（非24版本可跳过）
+      - name: set the ubuntu user as owner
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.SSH_USER_NAME }}
-          port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_KEY }}
-          source: "./html/*"
-          target: "/var/www/html"
+          script: sudo chown -R ubuntu /var/www/html
+
+      - name: copy file to server 
+        uses: appleboy/scp-action@master 
+        with: 
+          host: ${{ secrets.HOST }} 
+          username: ${{ secrets.SSH_USER_NAME }}
+          port: ${{ secrets.SSH_PORT }} 
+          key: ${{ secrets.SSH_KEY }} 
+          source: "./html/*" 
+          target: "/var/www/html" 
           strip_components: 1
+
+      # Ubuntu 24+ 还原权限
+      - name: set root user back owner
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.SSH_USER_NAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: sudo chown -R root /var/www/html
